@@ -13,6 +13,7 @@ public class LiteratureItem  {
 
     private String id;
     private String name;
+    private String literatureCode;
     private LiteratureType literatureType;
     private boolean isLineItemOnReport;
     private boolean fallsUnderOtherLineItem;
@@ -21,9 +22,35 @@ public class LiteratureItem  {
     private String urlForPublicationCoverImage;
     private boolean isPrintedInDoubles;
 
-    public LiteratureItem(String id, String name, LiteratureType literatureType) {
-        this.id = id;
-        this.name = name;
-        this.literatureType = literatureType;
+    public boolean isLineItemOnReport() {
+        return isLineItemOnReport;
+    }
+
+    public void setLineItemOnReport(boolean lineItemOnReport) {
+        isLineItemOnReport = lineItemOnReport;
+    }
+
+    public boolean isFallsUnderOtherLineItem() {
+        return fallsUnderOtherLineItem;
+    }
+
+    public void setFallsUnderOtherLineItem(boolean fallsUnderOtherLineItem) {
+        this.fallsUnderOtherLineItem = fallsUnderOtherLineItem;
+    }
+
+    public boolean isLargePrint() {
+        return isLargePrint;
+    }
+
+    public void setLargePrint(boolean largePrint) {
+        isLargePrint = largePrint;
+    }
+
+    public boolean isPrintedInDoubles() {
+        return isPrintedInDoubles;
+    }
+
+    public void setPrintedInDoubles(boolean printedInDoubles) {
+        isPrintedInDoubles = printedInDoubles;
     }
 }

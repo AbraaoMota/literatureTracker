@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Stock Tracker</title>
+    <link rel="stylesheet" th:href="@{/stock.css}">
+</head>
+<body>
+<h1>Add literature item</h1>
+<form action="#" th:action="@{/addNewLiteratureType}" th:object="${literatureItem}" method="post">
+    <table border="1">
+        <tr>
+            <td><label th:text="ID" /></td>
+            <td><input type="number" th:field="*{id}" /></td>
+        </tr>
+        <tr>
+            <td><label th:text="Name" /></td>
+            <td><input type="text" th:field="*{name}" /></td>
+        </tr>
+        <tr>
+            <td><label th:text="LiteratureCode" /></td>
+            <td><input type="text" th:field="*{literatureCode}" /></td>
+        </tr>
+        <tr>
+            <td><label th:text="LiteratureType" /></td>
+            <td><input type="text" th:field="*{literatureType}" /></td>
+        </tr>
+        <tr>
+            <td><label th:text="IsLineItemOnReport" /></td>
+            <td><input type="checkbox" field="*{isLineItemOnReport}" name="isLineItemOnReport" /></td>
+        </tr>
+        <tr>
+            <td><label th:text="FallsUnderOtherLineItem" /></td>
+            <td><input type="checkbox" field="*{fallsUnderOtherLineItem}" name="fallsUnderOtherLineItem" /></td>
+        </tr>
+        <tr>
+            <td><label th:text="IsLargePrint" /></td>
+            <td><input type="checkbox" field="*{isLargePrint}" name="isLargePrint" /></td>
+        </tr>
+        <tr>
+            <td><label th:text="Language" /></td>
+            <td><input type="text" th:field="*{language}" /></td>
+        </tr>
+        <tr>
+            <td><label th:text="UrlForPublicationCoverImage" /></td>
+            <td><input type="text" th:field="*{urlForPublicationCoverImage}" /></td>
+        </tr>
+        <tr>
+            <td><label th:text="IsPrintedInDoubles" /></td>
+            <td><input type="checkbox" field="*{isPrintedInDoubles}" name="isPrintedInDoubles" /></td>
+        </tr>
+        <tr>
+            <td><input type="submit" value="Submit" /></td>
+        </tr>
+    </table>
+</form>
+
+</body>
+</html>
