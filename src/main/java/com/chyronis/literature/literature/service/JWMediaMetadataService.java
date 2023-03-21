@@ -3,13 +3,36 @@ package com.chyronis.literature.literature.service;
 import com.chyronis.literature.literature.model.jwresponses.AllLanguagesResponse;
 import com.chyronis.literature.literature.model.jwresponses.PublicationMediaLinksResponse;
 import com.chyronis.literature.literature.mongo.LanguagesRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.http.codec.CodecConfigurer;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class JWMediaMetadataService {
 
+//    @Autowired
+//    CodecConfigurer codecConfigurer;
 
     WebClient webClient;
 
@@ -17,7 +40,14 @@ public class JWMediaMetadataService {
 
     @Autowired
     public JWMediaMetadataService(LanguagesRepository languagesRepository) {
-        this.webClient = WebClient.create();
+        final int size = 16 * 1024 * 1024;
+        final ExchangeStrategies strategies = ExchangeStrategies.builder()
+                .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(size))
+                .build();
+        this.webClient = WebClient.builder()
+                .exchangeStrategies(strategies)
+
+                .build();
         this.languagesRepository = languagesRepository;
     }
 
@@ -43,9 +73,130 @@ public class JWMediaMetadataService {
         return x.retrieve().bodyToMono(PublicationMediaLinksResponse.class).block();
     }
 
-    public PublicationMediaLinksResponse getPublicationDetailsById(String publicationId) {
-        WebClient.RequestHeadersUriSpec<?> x = WebClient.create("https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS?output=json&pub="+publicationId+"&langwritten=E").get();
-        return x.retrieve().bodyToMono(PublicationMediaLinksResponse.class).block();
+    public String callWolPublicationsPage() throws IOException {
+        String relativeUrlBase = "/en/wol/library/r1/lp-e/all-publications";
+        String rootPubURL = "https://wol.jw.org"+relativeUrlBase;
+
+        WebClient.RequestHeadersUriSpec<?> initialWebClient = WebClient.create(rootPubURL).get();
+        String response = initialWebClient.retrieve().bodyToMono(String.class).block();
+
+        Document doc = Jsoup.parse(response);
+
+        Elements links = doc.select("a[href]"); // a with href
+        Elements pngs = doc.select("img[src$=.png]");
+
+        String baseUrlHrefRegex = relativeUrlBase+"/(.*)";
+        Pattern regexMatch = Pattern.compile(baseUrlHrefRegex);
+
+        List<String> publicationPageLinks = new ArrayList<>();
+
+        for (Element element : links) {
+            if (element.attributes().hasDeclaredValueForKey("href")) {
+                String hrefAttr = element.attributes().get("href");
+                if (hrefAttr.contains(relativeUrlBase)) {
+                    Matcher regexMatcher = regexMatch.matcher(hrefAttr);
+                    regexMatcher.find();
+                    if (regexMatcher.matches()) {
+                        String furtherPublicationPages = regexMatcher.group(1);
+                        publicationPageLinks.add(furtherPublicationPages);
+                    }
+                }
+            }
+        }
+
+        List<String> pubIDs = new ArrayList<>();
+
+        for (String publicationType : publicationPageLinks) {
+            String newBaseURl = rootPubURL +"/" + publicationType;
+
+            WebClient.RequestHeadersUriSpec<?> secondClient = WebClient.create(newBaseURl).get();
+            String pubCategoryTypeResponse = secondClient.retrieve().bodyToMono(String.class).block();
+            Document pubCategoryResponseDoc = Jsoup.parse(pubCategoryTypeResponse);
+
+            Elements pubCategoryResponseLinks = pubCategoryResponseDoc.select("a[href]"); // a with href
+
+            String pubCategoryUrlHrefRegex = newBaseURl+"(.*)";
+            Pattern publicationIdPattern = Pattern.compile(pubCategoryUrlHrefRegex);
+
+            for (Element publicationNode : pubCategoryResponseLinks) {
+                if (publicationNode.attributes().hasDeclaredValueForKey("href")) {
+                    String hrefAttr = publicationNode.attributes().get("href");
+                    if (hrefAttr.contains(newBaseURl)) {
+                        Matcher regexMatcher = publicationIdPattern.matcher(hrefAttr);
+                        regexMatcher.find();
+                        if (regexMatcher.matches()) {
+                            String publicationId = regexMatcher.group(1);
+                            pubIDs.add(publicationId);
+                        }
+                    }
+                }
+            }
+
+        }
+
+        return pubIDs.toString();
+    }
+
+    public PublicationMediaLinksResponse getPublicationDetailsById(String publicationId) throws JsonProcessingException {
+
+
+        WebClient.RequestHeadersUriSpec<?> x = WebClient
+                .create("https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS?output=json&pub="+publicationId+"&langwritten=E")
+                .get();
+
+
+        Mono<String> response = x.retrieve().bodyToMono(String.class);
+
+
+        Flux<String> y = x.retrieve().bodyToFlux(DataBuffer.class)
+                .map(buffer -> {
+                    String string = buffer.toString(Charset.forName("UTF-8"));
+                    DataBufferUtils.release(buffer);
+                    return string;
+                });
+
+        ObjectMapper om = new ObjectMapper();
+        return om.readValue(y.blockFirst(), PublicationMediaLinksResponse.class);
+
+
+
+
+//        return x.retrieve().bodyToMono(PublicationMediaLinksResponse.class).block();
+    }
+
+    public String callJWOrgBooksPage() {
+        String url = "https://www.jw.org/en/library/books/";
+        WebClient.RequestHeadersUriSpec<?> initialWebClient = WebClient.create(url).get();
+        String response = initialWebClient.retrieve().bodyToMono(String.class).block();
+
+        Document doc = Jsoup.parse(response);
+
+        Elements divs = doc.select("div[class]"); // a with href
+        Elements pngs = doc.select("img[src$=.png]");
+
+        List<String> classesToLookFor = new ArrayList<>();
+        classesToLookFor.add("synopsis");
+        classesToLookFor.add("publication");
+
+        String classRegex = "pub-(.*)";
+        Pattern regexMatch = Pattern.compile(classRegex);
+
+        List<String> pubClassIds = new ArrayList<>();
+
+        for (Element element : divs) {
+            if (element.classNames().containsAll(classesToLookFor)) {
+                Set<String> elClassNames = element.classNames();
+                for (String s : elClassNames) {
+                    Matcher m = regexMatch.matcher(s);
+                    m.find();
+                    if (m.matches()) {
+                        pubClassIds.add(m.group(1));
+                    }
+                }
+            }
+        }
+
+        return pubClassIds.toString();
     }
 
 

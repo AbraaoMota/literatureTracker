@@ -9,11 +9,12 @@ import java.util.Map;
 public class PublicationMediaLinksResponse {
     private String pubName;
     private String parentPubName;
-    private String bookNum;
+    private String booknum;
     private String pub;
     private String issue;
     private String formattedDate;
-    private List<String> fileFormat;
+    private List<String> fileformat;
+    private String track;
     private String specialty;
     private PublicationImageLinksResponse pubImage;
     private Map<String, PublicationLanguageSummaryResponse> languages;
