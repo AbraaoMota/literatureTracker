@@ -1,10 +1,10 @@
 package com.chyronis.literature.literature.controller;
 
-import com.chyronis.literature.literature.model.LiteratureItem;
-import com.chyronis.literature.literature.model.LiteratureType;
+import com.chyronis.literature.literature.model.*;
 import com.chyronis.literature.literature.model.jwresponses.AllLanguagesResponse;
 import com.chyronis.literature.literature.model.jwresponses.PublicationMediaLinksResponse;
 import com.chyronis.literature.literature.mongo.LiteratureItemRepository;
+import com.chyronis.literature.literature.mongo.CongregationStockRepository;
 import com.chyronis.literature.literature.service.JWMediaMetadataService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.ui.Model;
@@ -13,9 +13,12 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 public class LiteratureController {
@@ -28,6 +31,9 @@ public class LiteratureController {
 
     @Autowired
     LiteratureItemRepository literatureItemRepository;
+
+    @Autowired
+    CongregationStockRepository congregationStockRepository;
 
     @GetMapping(value = "/helloWorld")
     public String helloWorld() {
@@ -72,6 +78,65 @@ public class LiteratureController {
         literatureItemRepository.insert(literatureItem);
         System.out.println("Added literature item successfully!");
         return "Added literature item successfully!";
+    }
+
+    @RequestMapping(value = "/handleStock", method = RequestMethod.GET)
+    public String handleStock(Model model) {
+
+
+
+        CongregationStock congStock = congregationStockRepository.findByCongregation("Clapham");
+
+        List<LiteratureStock> existingStock = congStock.getStock();
+
+        List<LiteratureStockUpdates> updatedStock = new ArrayList<>();
+        for (LiteratureStock stock : existingStock) {
+            updatedStock.add(new LiteratureStockUpdates(stock.getLiteratureCode(), stock.getCount()));
+        }
+
+        UpdateStockPayload updateStockPayload = UpdateStockPayload.builder()
+                .existingStock(existingStock)
+                .updatedStock(updatedStock)
+                .build();
+
+        model.addAttribute("updateStockPayload", updateStockPayload);
+        return "manage-literature-stock.html";
+    }
+
+
+    @RequestMapping(value = "/manageStock", method = RequestMethod.POST)
+    @ResponseBody
+    public ModelAndView manageStock(@ModelAttribute UpdateStockPayload updateStockPayload, BindingResult errors, Model model) {
+        System.out.println("updatedStock = " + updateStockPayload + ", errors = " + errors + ", model = " + model);
+
+        processStockUpdates(updateStockPayload);
+
+//        literatureStockRepository.insert(updateStockPayload);
+        System.out.println("Added literature item successfully!");
+        return new ModelAndView("redirect:handleStock");
+//        return "Added literature item successfully!";
+    }
+
+    private void processStockUpdates(UpdateStockPayload updateStockPayload) {
+
+        List<LiteratureStockUpdates> stockUpdates = updateStockPayload.getUpdatedStock();
+        CongregationStock congStock = congregationStockRepository.findByCongregation("Clapham");
+
+        for (LiteratureStockUpdates update : stockUpdates) {
+            List<LiteratureStock> relevantItemList = congStock.getStock().stream().filter(x -> x.getLiteratureCode().equals(update.getLiteratureCode())).toList();
+            if (!relevantItemList.isEmpty()) {
+                LiteratureStock relevantItem = relevantItemList.get(0);
+
+                if (update.isToBeRemoved()) {
+                    System.out.println("REMOVED");
+//                    literatureStockRepository.delete(relevantItem);
+                } else {
+                    relevantItem.setCount(update.getCount());
+                }
+            }
+        }
+
+        congregationStockRepository.save(congStock);
     }
 
 

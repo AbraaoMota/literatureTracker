@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Stock Tracker</title>
+    <link rel="stylesheet" th:href="@{/stock.css}">
+</head>
+<body>
+<h1>Manage Literature Stock</h1>
+
+<form th:action="@{/manageStock}" th:object="${updateStockPayload}" method="post">
+    <table>
+        <tr>
+<!--            <th>Congregation</th>-->
+            <th>Literature Code</th>
+            <th>Current Count</th>
+            <th>Code again</th>
+            <th>New Count</th>
+            <th>Remove item?</th>
+        </tr>
+        <tr th:each="stockItem, iterator : *{existingStock}">
+<!--            <td class="align-middle" th:text="${stockItem.congregation}"></td>-->
+            <td class="align-middle" th:text="${stockItem.literatureCode}" ></td>
+            <td class="align-middle" th:text="${stockItem.count}"></td>
+            <td class="align-middle"><input type="text" th:field="${updateStockPayload.updatedStock[__${iterator.index}__].literatureCode}"/></td>
+            <td class="align-middle"><input type="text" default="${stockItem.count}" th:field="${updateStockPayload.updatedStock[__${iterator.index}__].count}" /> </td>
+            <td class="align-middle"><input type="checkbox" th:field="${updateStockPayload.updatedStock[__${iterator.index}__].toBeRemoved}" name="toBeRemoved" /></td>
+            <td><input type="submit" value="Submit" /></td>
+        </tr>
+    </table>
+
+</form>
+
+
+
+
+
+
+
+
+
+
+
+<!--<form action="#" th:action="@{/manageStock}" th:object="${literatureStock}" method="post">-->
+<!--    <table border="1">-->
+<!--        <tr>-->
+<!--            <td><label th:text="Congregation" /></td>-->
+<!--            <td><input type="text" default="Clapham" th:field="*{congregation}" /></td>-->
+<!--        </tr>-->
+<!--        <tr>-->
+<!--            <td><label th:text="LiteratureCode" /></td>-->
+<!--            <td><input type="text" th:field="*{literatureCode}" /></td>-->
+<!--        </tr>-->
+<!--        <tr>-->
+<!--            <td><label th:text="Count" /></td>-->
+<!--            <td><input type="text" th:field="*{count}" /></td>-->
+<!--        </tr>-->
+<!--        <tr>-->
+<!--            <td><input type="submit" value="Submit" /></td>-->
+<!--        </tr>-->
+<!--    </table>-->
+<!--</form>-->
+
+</body>
+</html>
