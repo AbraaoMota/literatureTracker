@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clapham Stock Management</title>
+    <link rel="stylesheet" type="text/css" href="../css/style.css">
+    <script src="../js/functionality.js" defer></script>
+    <script src="../js/modal.js" defer></script>
+</head>
+<body>
+
+<header>
+    <h1>Clapham Stock Management</h1>
+</header>
+
+<button class="center-button" onclick="openModal()">Add Item</button>
+
+
+
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal()">×</span>
+        <h2>Add Item</h2>
+        <form id="addItemForm">
+            <label for="code">Code:</label>
+            <input type="text" id="code" name="code" required placeholder="Enter the literature code to fetch stock info">
+            <button type="button" class="fetch-button" onclick="fetchDetails()">
+                Fetch <span class="fetch-icon">↓</span>
+            </button>
+            <br>
+            <label for="literatureName">Literature Name:</label>
+            <input type="text" id="literatureName" name="literatureName" readonly>
+            <br>
+            <label for="currentTotalQuantity">Current Total Quantity:</label>
+            <input type="text" id="currentTotalQuantity" name="currentTotalQuantity" readonly>
+            <br>
+            <label for="frontQuantity">Front Quantity:</label>
+            <input type="text" id="frontQuantity" name="frontQuantity" readonly>
+            <br>
+            <label for="backQuantity">Back Quantity:</label>
+            <input type="text" id="backQuantity" name="backQuantity" readonly>
+            <br>
+            <label for="stockType" class="stock-label">Stock Type to Edit:</label>
+            <div id="stockButtonContainer" class="stock-buttons">
+                <label for="frontStock" class="stock-button" onclick="selectStockType('front')">Front Stock</label>
+                <label for="backStock" class="stock-button" onclick="selectStockType('back')">Back Stock</label>
+                <label for="totalStock" class="stock-button" onclick="selectStockType('total')">Total Stock</label>
+            </div>
+
+            <!-- Add a hidden input to store the selected stock type -->
+            <input type="hidden" id="selectedStockType" name="stockType" value="total">
+
+            <br>
+
+            <label for="quantity">Quantity:</label>
+            <input type="number" id="quantity" name="quantity" required oninput="updateAuxiliaryText()">
+            <span id="auxiliaryText"></span>
+
+            <br>
+            <button type="button" onclick="submitForm()">Submit</button>
+        </form>
+    </div>
+</div>
+
+
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Item Name</th>
+        <th>Current Quantity</th>
+        <th>Location</th>
+        <!-- Add more columns as needed -->
+    </tr>
+    </thead>
+    <tbody id="stockList">
+    <!-- Table rows will be dynamically added here -->
+    </tbody>
+</table>
+
+<script>
+
+</script>
+
+</body>
+</html>
