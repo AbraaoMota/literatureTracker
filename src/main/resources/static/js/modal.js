@@ -3,68 +3,184 @@ function openModal() {
 }
 
 function closeModal() {
-    document.getElementById("myModal").style.display = "none";
+    // Close the modal
+    const modal = document.getElementById('myModal');
+    modal.style.display = 'none';
+
+    // Reset values in the form
+    document.getElementById('code').value = '';  // Reset literature code to empty
+    document.getElementById('literatureName').value = '';  // Reset literature name to empty
+    document.getElementById('currentTotalQuantity').value = '';  // Reset total quantity to empty
+    document.getElementById('frontQuantity').value = '';  // Reset front quantity to empty
+    document.getElementById('backQuantity').value = '';  // Reset back quantity to empty
+    document.getElementById('quantity').value = '';  // Reset submission quantity to empty
+    document.getElementById('auxiliaryText').textContent = ''; // Reset auxiliary text to Empty
+    document.getElementById('imageContainer').style = 'display: none';
+
+    // Reset image source if the image element exists
+    const imageElement = document.getElementById('literatureImage');
+    if (imageElement) {
+        imageElement.src = '';  // Reset image source to empty
+    }
 }
 
 function submitForm() {
-    var code = document.getElementById('code').value;
-    var stockType = document.querySelector('input[name="stockType"]:checked').value;
-    var quantity = document.getElementById("quantity").value;
+    // Get form data
+    const code = document.getElementById('code').value;
+    const quantity = parseInt(document.getElementById('quantity').value);
+    const stockType = document.getElementById('selectedStockType').value;
 
-    // Example: Display the submitted values in the console
-    console.log("Code:", code);
-    console.log("Stock Type:", stockType);
-    console.log("Quantity:", quantity);
+    // Include the hardcoded parameter congId as a string
+    const congId = '1'; // Converted to string
 
-    // You can now make a POST request with the gathered data
-    // For simplicity, this example just displays the values in the console
-    // In a real application, you would send these values to a server
-    // using AJAX or fetch to perform the desired operations.
+    // Get the selected language code from the dropdown
+    const languageSelector = document.getElementById('languageSelector');
+    const selectedLanguageCode = languageSelector.value;
 
-    var data = {
-        code: code,
-        stockType: stockType,
-        quantity: quantity
+    // Construct item to be inserted into DynamoDB
+    const item = {
+        congId: congId,
+        languages: {
+            [selectedLanguageCode]: {
+                [code]: {
+                    frontQuantity: 0,  // Initialize with default values
+                    backQuantity: 0,   // Initialize with default values
+                    totalQuantity: 0   // Initialize with default values
+                }
+            }
+        }
     };
 
-    // This will be my Lambda function URL
-    // Making a POST request using Fetch API
-    fetch('https://your-api-endpoint.com/addItem', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-            // Add any other headers if needed
+    // DynamoDB GetItem parameters to retrieve existing item
+    const getItemParams = {
+        TableName: stockTableName,
+        Key: {
+            'congId': congId
         },
-        body: JSON.stringify(data)
-    })
-        .then(response => response.json())
-        .then(data => {
-            // Handle the response data as needed
-            console.log('POST Request Response:', data);
-        })
-        .catch(error => {
-            console.error('Error:', error);
+        ProjectionExpression: `languages.${selectedLanguageCode}.#code.frontQuantity, languages.${selectedLanguageCode}.#code.backQuantity, languages.${selectedLanguageCode}.#code.totalQuantity`,
+        ExpressionAttributeNames: {
+            '#code': `${code}`
+        }
+    };
+
+    // Use DynamoDB DocumentClient to get existing item
+    dynamoDB.get(getItemParams, function (err, data) {
+        if (err) {
+            console.error('Error fetching existing item:', err);
+            return;
+        }
+
+        // Check if the item exists in the database
+        const existingItem = data.Item;
+        if (existingItem && existingItem.languages[selectedLanguageCode] && existingItem.languages[selectedLanguageCode][code]) {
+            // Reconcile quantities based on stockType
+            if (stockType === 'front') {
+                item.languages[selectedLanguageCode][code].frontQuantity = quantity;
+                item.languages[selectedLanguageCode][code].backQuantity = existingItem.languages[selectedLanguageCode][code].backQuantity;
+            } else if (stockType === 'back') {
+                item.languages[selectedLanguageCode][code].frontQuantity = existingItem.languages[selectedLanguageCode][code].frontQuantity;
+                item.languages[selectedLanguageCode][code].backQuantity = quantity;
+            }
+        } else {
+            // If the item doesn't exist, set quantities based on stockType
+            if (stockType === 'front') {
+                item.languages[selectedLanguageCode][code].frontQuantity = quantity;
+            } else if (stockType === 'back') {
+                item.languages[selectedLanguageCode][code].backQuantity = quantity;
+            }
+        }
+
+        // Calculate totalQuantity as the sum of frontQuantity and backQuantity
+        item.languages[selectedLanguageCode][code].totalQuantity =
+            item.languages[selectedLanguageCode][code].frontQuantity +
+            item.languages[selectedLanguageCode][code].backQuantity;
+
+        // DynamoDB PutItem parameters
+        const putItemParams = {
+            TableName: stockTableName,
+            Item: item,
+        };
+
+        // Use DynamoDB DocumentClient to put item
+        dynamoDB.put(putItemParams, function (putErr, putData) {
+            if (putErr) {
+                console.error('Unable to add/update item', putErr);
+            } else {
+                console.log('Item added/updated successfully', putData);
+                closeModal();  // Close the modal after successful submission
+            }
         });
-
-
-
-
-    // After handling the submission, you can close the modal
-    closeModal();
+    });
 }
 
-// Function to simulate fetching details based on the entered Code
 function fetchDetails() {
-    // This is just a placeholder function; replace it with actual fetching logic
-    var code = document.getElementById("code").value;
+    // Get literature code from the input
+    const code = document.getElementById('code').value;
 
-    // Example: Displaying dummy data in the form
-    document.getElementById("literatureName").value = "Sample Literature";
-    document.getElementById("currentTotalQuantity").value = 100;
-    document.getElementById("frontQuantity").value = 40;
-    document.getElementById("backQuantity").value = 60;
+    // Replace 'E' with the dynamically selected language code
+    const selectedLanguageCode = document.getElementById('languageSelector').value;
+
+    // DynamoDB query parameters for stock table
+    const stockParams = {
+        TableName: stockTableName,
+        KeyConditionExpression: 'congId = :id',
+        ExpressionAttributeValues: {
+            ':id': '1', // Assuming a fixed congId for this example
+        },
+        ProjectionExpression: `languages.${selectedLanguageCode}.#code.frontQuantity, languages.${selectedLanguageCode}.#code.backQuantity, languages.${selectedLanguageCode}.#code.totalQuantity`,
+        ExpressionAttributeNames: {
+            '#code': `${code}`
+        }
+    };
+
+    // DynamoDB query parameters for literatureRefData table
+    const literatureParams = {
+        TableName: literatureRefTableName,
+        Key: {
+            'litCode': code
+        },
+        ProjectionExpression: 'title, image'
+    };
+
+    // Use DynamoDB DocumentClient to query stock table
+    dynamoDB.query(stockParams, function (stockErr, stockData) {
+        if (stockErr) {
+            console.error('Error fetching stock data:', stockErr);
+            return;
+        }
+
+        // Use DynamoDB DocumentClient to query literatureRefData table
+        dynamoDB.get(literatureParams, function (literatureErr, literatureData) {
+            if (literatureErr) {
+                console.error('Error fetching literature data:', literatureErr);
+                return;
+            }
+
+            // Extract relevant data from the query results
+            const stockItem = stockData.Items[0];
+            const literatureItem = literatureData.Item;
+
+            // Populate form fields with the retrieved data
+            document.getElementById('literatureName').value = literatureItem.title || 'Not Available';
+            document.getElementById('currentTotalQuantity').value = stockItem ? stockItem.languages[selectedLanguageCode][code].totalQuantity || 0 : 0;
+            document.getElementById('frontQuantity').value = stockItem ? stockItem.languages[selectedLanguageCode][code].frontQuantity || 0 : 0;
+            document.getElementById('backQuantity').value = stockItem ? stockItem.languages[selectedLanguageCode][code].backQuantity || 0 : 0;
+
+            // Set the image source
+            const literatureImage = document.getElementById('literatureImage');
+            const imageContainer = document.getElementById('imageContainer');
+
+            // Hide the image if no image is available
+            if (literatureItem.image) {
+                literatureImage.src = literatureItem.image; // Assuming 'image' is a URL
+                imageContainer.style.display = 'block'; // Show the image container
+            } else {
+                literatureImage.src = ''; // Clear the image source
+                imageContainer.style.display = 'none'; // Hide the image container
+            }
+        });
+    });
 }
-
 
 // JavaScript function to handle stock type selection
 function selectStockType(type) {
@@ -85,46 +201,6 @@ function selectStockType(type) {
 
 // Event listener to fetch details when ID is entered in the modal
 document.getElementById("code").addEventListener("blur", fetchDetails);
-function addItem() {
-    // Get the ID from the form
-    var itemId = document.getElementById("itemId").value;
-
-
-    // Making a GET request using Fetch API
-    fetch(`https://your-api-endpoint.com/getDetails?id=${itemId}`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json'
-            // Add any other headers if needed
-        }
-    })
-        .then(response => response.json())
-        .then(data => {
-            // Handle the response data as needed
-            console.log('GET Request Response:', data);
-
-            // Populate the form fields with fetched data
-            document.getElementById("literatureName").value = data.literatureName;
-            document.getElementById("currentTotalQuantity").value = data.currentTotalQuantity;
-            document.getElementById("frontQuantity").value = data.frontQuantity;
-            document.getElementById("backQuantity").value = data.backQuantity;
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-
-
-    // Below is sample code that listen to event and populates
-    // // Add the item to the table
-    // var table = document.getElementById("stockList");
-    // var newRow = table.insertRow(table.rows.length);
-    // var cell1 = newRow.insertCell(0);
-    // cell1.innerHTML = itemId;
-    // // Add more cells for additional item details as needed
-
-    // Close the modal
-    closeModal();
-}
 
 // Function to initialize the page and set up event listeners
 function initializePage() {
@@ -169,9 +245,6 @@ function updateAuxiliaryText() {
                 break;
             case 'front':
                 currentQuantity = currentFrontQuantity;
-                break;
-            case 'total':
-                currentQuantity = currentTotalQuantity;
                 break;
             default:
                 break;

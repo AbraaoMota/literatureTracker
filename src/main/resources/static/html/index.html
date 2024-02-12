@@ -5,18 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clapham Stock Management</title>
     <link rel="stylesheet" type="text/css" href="../css/style.css">
-    <script src="../js/functionality.js" defer></script>
+    <link rel="stylesheet" type="text/css" href="../css/modal.css">
+    <link rel="stylesheet" type="text/css" href="../css/lightDarkMode.css">
+    <script src="../js/awsConfig.js" defer></script>
     <script src="../js/modal.js" defer></script>
+    <script src="../js/lightDarkMode.js" defer></script>
+    <script src="../js/language.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/aws-sdk@2.1233.0/dist/aws-sdk.min.js"></script>
+
 </head>
-<body>
+<body class="dark-mode">
+
+<button class="toggle-mode" id="toggleModeButton" onclick="toggleMode()">Light Mode</button>
 
 <header>
     <h1>Clapham Stock Management</h1>
+    <label for="languageSelector">Select Language:</label>
+    <select id="languageSelector">
+        <!-- Default option -->
+        <option value="E" selected>English</option>
+    </select>
 </header>
 
+
 <button class="center-button" onclick="openModal()">Add Item</button>
-
-
 
 <div id="myModal" class="modal">
     <div class="modal-content">
@@ -29,6 +41,12 @@
                 Fetch <span class="fetch-icon">↓</span>
             </button>
             <br>
+            <!-- Add a div container for the image with padding and initial hidden state -->
+            <div id="imageContainer" style="padding: 10px; display: none;">
+                <img id="literatureImage" alt="Literature Image" style="max-width: 100%; height: auto;" />
+            </div>
+            <br>
+
             <label for="literatureName">Literature Name:</label>
             <input type="text" id="literatureName" name="literatureName" readonly>
             <br>
@@ -45,11 +63,10 @@
             <div id="stockButtonContainer" class="stock-buttons">
                 <label for="frontStock" class="stock-button" onclick="selectStockType('front')">Front Stock</label>
                 <label for="backStock" class="stock-button" onclick="selectStockType('back')">Back Stock</label>
-                <label for="totalStock" class="stock-button" onclick="selectStockType('total')">Total Stock</label>
             </div>
 
             <!-- Add a hidden input to store the selected stock type -->
-            <input type="hidden" id="selectedStockType" name="stockType" value="total">
+            <input type="hidden" id="selectedStockType" name="stockType" value="front">
 
             <br>
 
@@ -62,7 +79,6 @@
         </form>
     </div>
 </div>
-
 
 <table>
     <thead>
@@ -79,9 +95,8 @@
     </tbody>
 </table>
 
-<script>
-
-</script>
+<h1>TODO: work around code issues (dots in dynamo) connect to dynamo from here, new literature edit screen (puts into dynamo), new dynamo table for stock tracking - congId -> hashMap of litCode -> Count"</h1>
 
 </body>
 </html>
+
