@@ -7,6 +7,7 @@
     <link rel="stylesheet" type="text/css" href="../css/style.css">
     <link rel="stylesheet" type="text/css" href="../css/modal.css">
     <link rel="stylesheet" type="text/css" href="../css/lightDarkMode.css">
+    <script src="../js/table.js" defer></script>
     <script src="../js/awsConfig.js" defer></script>
     <script src="../js/modal.js" defer></script>
     <script src="../js/lightDarkMode.js" defer></script>
@@ -26,6 +27,8 @@
         <option value="E" selected>English</option>
     </select>
 </header>
+
+<h1>TODO: manage multiple congs (conf ref data table?), handle large prints across the stack, be able to submit other languages, make inputs larger so you can fully read them</h1>
 
 
 <button class="center-button" onclick="openModal()">Add Item</button>
@@ -83,10 +86,14 @@
 <table>
     <thead>
     <tr>
-        <th>ID</th>
+        <th>Congregation ID</th>
+        <th>Thumbnail</th>
+        <th>Literature Code</th>
         <th>Item Name</th>
-        <th>Current Quantity</th>
-        <th>Location</th>
+        <th>Front Quantity</th>
+        <th>Back Quantity</th>
+        <th>Total Quantity</th>
+<!--        <th>Location</th>-->
         <!-- Add more columns as needed -->
     </tr>
     </thead>
@@ -94,8 +101,6 @@
     <!-- Table rows will be dynamically added here -->
     </tbody>
 </table>
-
-<h1>TODO: work around code issues (dots in dynamo) connect to dynamo from here, new literature edit screen (puts into dynamo), new dynamo table for stock tracking - congId -> hashMap of litCode -> Count"</h1>
 
 </body>
 </html>

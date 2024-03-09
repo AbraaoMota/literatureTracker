@@ -37,30 +37,10 @@ function submitForm() {
     const languageSelector = document.getElementById('languageSelector');
     const selectedLanguageCode = languageSelector.value;
 
-    // Construct item to be inserted into DynamoDB
-    const item = {
-        congId: congId,
-        languages: {
-            [selectedLanguageCode]: {
-                [code]: {
-                    frontQuantity: 0,  // Initialize with default values
-                    backQuantity: 0,   // Initialize with default values
-                    totalQuantity: 0   // Initialize with default values
-                }
-            }
-        }
-    };
-
     // DynamoDB GetItem parameters to retrieve existing item
     const getItemParams = {
         TableName: stockTableName,
-        Key: {
-            'congId': congId
-        },
-        ProjectionExpression: `languages.${selectedLanguageCode}.#code.frontQuantity, languages.${selectedLanguageCode}.#code.backQuantity, languages.${selectedLanguageCode}.#code.totalQuantity`,
-        ExpressionAttributeNames: {
-            '#code': `${code}`
-        }
+        Key: { 'congId': congId }
     };
 
     // Use DynamoDB DocumentClient to get existing item
@@ -70,35 +50,43 @@ function submitForm() {
             return;
         }
 
+        let congItem = getItemFromDbReturn(data);
+
+        let allLanguageItemsFromDB = getAllLanguageItemsOutOfCongItem(congItem, selectedLanguageCode);
         // Check if the item exists in the database
-        const existingItem = data.Item;
-        if (existingItem && existingItem.languages[selectedLanguageCode] && existingItem.languages[selectedLanguageCode][code]) {
+        if (containsLitCode(allLanguageItemsFromDB, code)) {
             // Reconcile quantities based on stockType
             if (stockType === 'front') {
-                item.languages[selectedLanguageCode][code].frontQuantity = quantity;
-                item.languages[selectedLanguageCode][code].backQuantity = existingItem.languages[selectedLanguageCode][code].backQuantity;
+                allLanguageItemsFromDB[code].frontQuantity = quantity;
             } else if (stockType === 'back') {
-                item.languages[selectedLanguageCode][code].frontQuantity = existingItem.languages[selectedLanguageCode][code].frontQuantity;
-                item.languages[selectedLanguageCode][code].backQuantity = quantity;
+                allLanguageItemsFromDB[code].backQuantity = quantity;
             }
         } else {
             // If the item doesn't exist, set quantities based on stockType
-            if (stockType === 'front') {
-                item.languages[selectedLanguageCode][code].frontQuantity = quantity;
-            } else if (stockType === 'back') {
-                item.languages[selectedLanguageCode][code].backQuantity = quantity;
-            }
+
+            const frontQuant = stockType === 'front' ? quantity : 0;
+            const backQuant = stockType === 'back' ? quantity : 0;
+
+            allLanguageItemsFromDB[code] = {
+                frontQuantity: frontQuant,
+                backQuantity: backQuant,
+                totalQuantity: frontQuant + backQuant
+            };
         }
 
         // Calculate totalQuantity as the sum of frontQuantity and backQuantity
-        item.languages[selectedLanguageCode][code].totalQuantity =
-            item.languages[selectedLanguageCode][code].frontQuantity +
-            item.languages[selectedLanguageCode][code].backQuantity;
+        allLanguageItemsFromDB[code].totalQuantity =
+            allLanguageItemsFromDB[code].frontQuantity +
+            allLanguageItemsFromDB[code].backQuantity;
+
+        // Update cong languages part of object with the new items
+        congItem[selectedLanguageCode] = allLanguageItemsFromDB;
+        congItem.congId = congId;
 
         // DynamoDB PutItem parameters
         const putItemParams = {
             TableName: stockTableName,
-            Item: item,
+            Item: congItem,
         };
 
         // Use DynamoDB DocumentClient to put item
@@ -111,6 +99,26 @@ function submitForm() {
             }
         });
     });
+
+    fetchAllItems();
+}
+
+function getItemFromDbReturn(data) {
+    return data.Item ? data.Item : null;
+}
+
+function getAllLanguageItemsOutOfCongItem(congItem, languageCode) {
+   if (congItem != null && congItem.languages != null && congItem.languages[languageCode] != null) {
+       return congItem.languages[languageCode];
+   } else return null;
+}
+
+function containsLitCode(congLanguagesItemList, litCode) {
+    return congLanguagesItemList[litCode] != null;
+}
+
+const isObjectEmpty = (objectName) => {
+    return Object.keys(objectName).length === 0
 }
 
 function fetchDetails() {
@@ -146,7 +154,6 @@ function fetchDetails() {
     dynamoDB.query(stockParams, function (stockErr, stockData) {
         if (stockErr) {
             console.error('Error fetching stock data:', stockErr);
-            return;
         }
 
         // Use DynamoDB DocumentClient to query literatureRefData table
@@ -157,7 +164,10 @@ function fetchDetails() {
             }
 
             // Extract relevant data from the query results
-            const stockItem = stockData.Items[0];
+            let stockItem = null;
+            if (stockData != null && !isObjectEmpty(stockData.Items[0])) {
+                stockItem = stockData.Items[0];
+            }
             const literatureItem = literatureData.Item;
 
             // Populate form fields with the retrieved data
@@ -190,7 +200,7 @@ function selectStockType(type) {
     });
 
     // Add 'selected' class to the clicked button
-    var selectedButton = document.querySelector('.stock-button[for="' + type + 'Stock"]');
+    const selectedButton = document.querySelector('.stock-button[for="' + type + 'Stock"]');
     if (selectedButton) {
         selectedButton.classList.add('selected');
     }
