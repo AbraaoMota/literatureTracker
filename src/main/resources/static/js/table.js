@@ -1,9 +1,12 @@
 // Add this function to fetch all items from DynamoDB and populate the main screen table
 function fetchAllItems() {
     const stockListTable = document.getElementById('stockList');
-    stockListTable.innerHTML = ''; // Clear existing table content
-
+    while (stockListTable.rows.length > 0) {
+        stockListTable.deleteRow(0);
+    }
     const selectedLanguageCode = document.getElementById('languageSelector').value;
+    console.log("selectedLangCode")
+    console.log(selectedLanguageCode)
 
     // DynamoDB scan parameters for stock table
     const scanParams = {
@@ -55,7 +58,14 @@ function fetchAllItems() {
                             frontQuantityCell.innerHTML = litItem.frontQuantity || 0;
                             backQuantityCell.innerHTML = litItem.backQuantity || 0;
                             totalQuantityCell.innerHTML = litItem.totalQuantity || 0;
-                            litNameCell.innerHTML = details.title || 'N/A';
+
+                            // Check if the link is available before creating the anchor tag
+                            if (details.link) {
+                                litNameCell.innerHTML = `<a href="${details.link}" target="_blank">${details.title || 'N/A'}</a>`;
+                            } else {
+                                litNameCell.innerHTML = details.title || 'N/A';
+                            }
+
 
                             // Create img element for the image cell
                             const imgElement = document.createElement('img');
@@ -90,7 +100,10 @@ function getLitDetailsFromRefTable(literatureCodes) {
             Key: {
                 'litCode': litCode
             },
-            ProjectionExpression: 'title, image'
+            ProjectionExpression: 'title, image, link, #yr',
+            ExpressionAttributeNames: {
+                '#yr': 'year'
+            }
         };
 
         return new Promise((resolve, reject) => {

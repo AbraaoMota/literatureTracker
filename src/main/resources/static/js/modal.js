@@ -53,6 +53,17 @@ function submitForm() {
         let congItem = getItemFromDbReturn(data);
 
         let allLanguageItemsFromDB = getAllLanguageItemsOutOfCongItem(congItem, selectedLanguageCode);
+
+
+        console.log("BOOP")
+        console.log(congItem);
+        console.log(allLanguageItemsFromDB);
+
+        // New language items!
+        if (allLanguageItemsFromDB == null) {
+            allLanguageItemsFromDB = {}
+        }
+
         // Check if the item exists in the database
         if (containsLitCode(allLanguageItemsFromDB, code)) {
             // Reconcile quantities based on stockType
@@ -80,7 +91,7 @@ function submitForm() {
             allLanguageItemsFromDB[code].backQuantity;
 
         // Update cong languages part of object with the new items
-        congItem[selectedLanguageCode] = allLanguageItemsFromDB;
+        congItem.languages[selectedLanguageCode] = allLanguageItemsFromDB;
         congItem.congId = congId;
 
         // DynamoDB PutItem parameters

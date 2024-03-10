@@ -1,0 +1,157 @@
+{
+  "E": {
+    "M": {
+      "g19.2": {
+        "M": {
+          "frontQuantity": {
+            "N": "0"
+          },
+          "backQuantity": {
+            "N": "1"
+          },
+          "totalQuantity": {
+            "N": "1"
+          }
+        }
+      },
+      "be": {
+        "M": {
+          "frontQuantity": {
+            "N": "0"
+          },
+          "backQuantity": {
+            "N": "5"
+          },
+          "totalQuantity": {
+            "N": "5"
+          }
+        }
+      },
+      "wp21.1": {
+        "M": {
+          "frontQuantity": {
+            "N": "3434"
+          },
+          "backQuantity": {
+            "N": "18"
+          },
+          "totalQuantity": {
+            "N": "3452"
+          }
+        }
+      },
+      "wp21.2": {
+        "M": {
+          "frontQuantity": {
+            "N": "100"
+          },
+          "backQuantity": {
+            "N": "0"
+          },
+          "totalQuantity": {
+            "N": "100"
+          }
+        }
+      },
+      "ba": {
+        "M": {
+          "frontQuantity": {
+            "N": "4"
+          },
+          "backQuantity": {
+            "N": "0"
+          },
+          "totalQuantity": {
+            "N": "4"
+          }
+        }
+      },
+      "wp21.3": {
+        "M": {
+          "frontQuantity": {
+            "N": "1"
+          },
+          "backQuantity": {
+            "N": "100"
+          },
+          "totalQuantity": {
+            "N": "101"
+          }
+        }
+      },
+      "wp23.1": {
+        "M": {
+          "frontQuantity": {
+            "N": "100"
+          },
+          "backQuantity": {
+            "N": "200"
+          },
+          "totalQuantity": {
+            "N": "300"
+          }
+        }
+      }
+    }
+  },
+  "ABN": {
+    "M": {
+      "wp21.1": {
+        "M": {
+          "frontQuantity": {
+            "N": "5"
+          },
+          "backQuantity": {
+            "N": "0"
+          },
+          "totalQuantity": {
+            "N": "5"
+          }
+        }
+      }
+    }
+  },
+  "TPO": {
+    "M": {
+      "wp21.1": {
+        "M": {
+          "frontQuantity": {
+            "N": "100"
+          },
+          "backQuantity": {
+            "N": "0"
+          },
+          "totalQuantity": {
+            "N": "100"
+          }
+        }
+      },
+      "wp22.1": {
+        "M": {
+          "frontQuantity": {
+            "N": "100"
+          },
+          "backQuantity": {
+            "N": "0"
+          },
+          "totalQuantity": {
+            "N": "100"
+          }
+        }
+      },
+      "wp23.1": {
+        "M": {
+          "frontQuantity": {
+            "N": "100"
+          },
+          "backQuantity": {
+            "N": "0"
+          },
+          "totalQuantity": {
+            "N": "100"
+          }
+        }
+      }
+    }
+  }
+}

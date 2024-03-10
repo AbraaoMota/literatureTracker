@@ -61,3 +61,12 @@ th {
     background-color: #4CAF50;
     color: white;
 }
+
+a {
+    color: #3498db; /* Change to your preferred color */
+    text-decoration: none; /* Remove underline */
+}
+
+a:hover {
+    color: #2980b9; /* Change to your preferred hover color */
+}
